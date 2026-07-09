@@ -15,15 +15,15 @@ graph TD
     end
 
     subgraph Backend [Express API Server]
-        API -->|Request| Route[/api/contact Route]
+        API -->|Request| Route["/api/contact Route"]
         Route --> Ctrl[contactController.js]
         Ctrl -->|Create Mongoose Model| Model[contact.model.js]
         Ctrl -->|SMTP sendMail| Nodemailer[Mailer.js Helper]
     end
 
     subgraph Database & Services
-        Model -->|Persist| MongoDB[(MongoDB local/atlas)]
-        Nodemailer -->|Deliver| Gmail[Gmail SMTP Service]
+        Model -->|Persist| MongoDB["MongoDB (local/atlas)"]
+        Nodemailer -->|Deliver| Gmail["Gmail SMTP Service"]
     end
 ```
 
