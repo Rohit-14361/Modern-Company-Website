@@ -12,6 +12,15 @@ const transporter = nodemailer.createTransport({
   family: 4, // Force IPv4 to prevent connection issues on cloud platforms like Render
 });
 
+// Verify SMTP connection config at startup
+transporter.verify((err, success) => {
+  if (err) {
+    console.error("SMTP VERIFY ERROR:", err);
+  } else {
+    console.log("SMTP READY");
+  }
+});
+
 /**
  * Sends a notification email to the admin summarizing a new contact form submission.
  */
