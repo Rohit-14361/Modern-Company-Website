@@ -2,24 +2,25 @@ const nodemailer = require("nodemailer");
 
 /* ─── Transporter Configuration ──────────────────────────────── */
 const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST || "smtp-relay.brevo.com",
-  port: parseInt(process.env.MAIL_PORT, 10) || 587,
-  secure: process.env.MAIL_SECURE === "true", // false for 587, true for 465
+  host: process.env.MAIL_HOST,
+  port: Number(process.env.MAIL_PORT),
+  secure: process.env.MAIL_SECURE === "true",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  family: 4, // Force IPv4 to prevent connection issues on cloud platforms like Render
+  logger: true,
+  debug: true,
 });
 
-// Verify SMTP connection config at startup
-transporter.verify((err, success) => {
-  if (err) {
-    console.error("SMTP VERIFY ERROR:", err);
-  } else {
+(async () => {
+  try {
+    await transporter.verify();
     console.log("SMTP READY");
+  } catch (err) {
+    console.error(err);
   }
-});
+})();
 
 /**
  * Sends a notification email to the admin summarizing a new contact form submission.
