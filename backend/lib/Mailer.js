@@ -2,11 +2,14 @@ const nodemailer = require("nodemailer");
 
 /* ─── Transporter ────────────────────────────────────────────── */
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.MAIL_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.MAIL_PORT, 10) || 465,
+  secure: process.env.MAIL_PORT ? (process.env.MAIL_SECURE === "true") : true,
   auth: {
     user: process.env.EMAIL_USER, // your Gmail address
     pass: process.env.EMAIL_PASS, // Gmail App Password (NOT login password)
   },
+  family: 4, // Force IPv4 to resolve ENETUNREACH issues on cloud environments (like Render)
 });
 
 const sendAdminNotification = async ({ name, email, phone, subject, message }) => {
