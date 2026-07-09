@@ -1,53 +1,21 @@
 const nodemailer = require("nodemailer");
-const dns = require("dns").promises;
 
-/* ─── Transporter Generator (Resolving host to IPv4 to bypass cloud IPv6 issues) ── */
-let transporterPromise = null;
+/* ─── Transporter Configuration ──────────────────────────────── */
+const transporter = nodemailer.createTransport({
+  host: process.env.MAIL_HOST || "smtp-relay.brevo.com",
+  port: parseInt(process.env.MAIL_PORT, 10) || 587,
+  secure: process.env.MAIL_SECURE === "true", // false for 587, true for 465
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  family: 4, // Force IPv4 to prevent connection issues on cloud platforms like Render
+});
 
-function getTransporter() {
-  if (!transporterPromise) {
-    transporterPromise = (async () => {
-      const mailHost = process.env.MAIL_HOST || "smtp.gmail.com";
-      let ipHost = mailHost;
-
-      // Regular expression to check if mailHost is an IP address
-      const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(mailHost);
-      if (!isIP) {
-        try {
-          console.log(`Resolving SMTP host ${mailHost} to IPv4...`);
-          const addresses = await dns.resolve4(mailHost);
-          if (addresses && addresses.length > 0) {
-            ipHost = addresses[0];
-            console.log(`Successfully resolved ${mailHost} to IPv4: ${ipHost}`);
-          }
-        } catch (err) {
-          console.error(`DNS lookup failed for ${mailHost}, falling back to hostname:`, err);
-        }
-      }
-
-      const port = parseInt(process.env.MAIL_PORT, 10) || 465;
-      const isSecure = process.env.MAIL_PORT ? (process.env.MAIL_SECURE === "true") : true;
-
-      return nodemailer.createTransport({
-        host: ipHost,
-        port: port,
-        secure: isSecure,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-        tls: {
-          servername: mailHost, // original hostname is required for TLS validation
-        },
-      });
-    })();
-  }
-  return transporterPromise;
-}
-
-
+/**
+ * Sends a notification email to the admin summarizing a new contact form submission.
+ */
 const sendAdminNotification = async ({ name, email, phone, subject, message }) => {
-  const transporter = await getTransporter();
   await transporter.sendMail({
     from:    `"Digi Labs Contact" <${process.env.EMAIL_USER}>`,
     to:      process.env.EMAIL_RECEIVER || process.env.EMAIL_USER,
@@ -100,15 +68,10 @@ const sendAdminNotification = async ({ name, email, phone, subject, message }) =
   });
 };
 
-/* ─────────────────────────────────────────────────────────────── */
 /**
- * Sends an auto-reply confirmation email to the user
- * who submitted the contact form.
- *
- * @param {{ name, email, subject, message }} data
+ * Sends a confirmation auto-reply email to the customer who filled out the contact form.
  */
 const sendUserAutoReply = async ({ name, email, subject, message }) => {
-  const transporter = await getTransporter();
   await transporter.sendMail({
     from:    `"Digi Labs" <${process.env.EMAIL_USER}>`,
     to:      email,
@@ -145,5 +108,4 @@ const sendUserAutoReply = async ({ name, email, subject, message }) => {
   });
 };
 
-/* ─────────────────────────────────────────────────────────────── */
 module.exports = { sendAdminNotification, sendUserAutoReply };
