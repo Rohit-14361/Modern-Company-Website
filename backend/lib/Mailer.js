@@ -1,121 +1,80 @@
 const nodemailer = require("nodemailer");
 
-/* ─── Transporter Configuration ──────────────────────────────── */
 const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST,
-  port: Number(process.env.MAIL_PORT),
-  secure: process.env.MAIL_SECURE === "true",
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS, // Gmail App Password
   },
-  logger: true,
-  debug: true,
 });
 
 (async () => {
   try {
     await transporter.verify();
-    console.log("SMTP READY");
+    console.log("Gmail SMTP Connected");
   } catch (err) {
-    console.error(err);
+    console.error("SMTP Error:", err);
   }
 })();
 
-/**
- * Sends a notification email to the admin summarizing a new contact form submission.
- */
-const sendAdminNotification = async ({ name, email, phone, subject, message }) => {
-  await transporter.sendMail({
-    from:    `"Digi Labs Contact" <${process.env.EMAIL_USER}>`,
-    to:      process.env.EMAIL_RECEIVER || process.env.EMAIL_USER,
+const sendAdminNotification = async ({
+  name,
+  email,
+  phone,
+  subject,
+  message,
+}) => {
+  return transporter.sendMail({
+    from: `"Digi Labs Contact" <${process.env.EMAIL_USER}>`,
+    to: process.env.EMAIL_RECEIVER,
     replyTo: email,
     subject: `[Contact Form] ${subject}`,
     html: `
-      <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;
-                  background:#0a0f1e;color:#f0f4ff;padding:32px;border-radius:12px;">
+      <h2>New Contact Form Submission</h2>
 
-        <h2 style="color:#C6FA50;margin-bottom:24px;">
-          New Contact Form Submission
-        </h2>
+      <p><strong>Name:</strong> ${name}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Phone:</strong> ${phone || "N/A"}</p>
+      <p><strong>Subject:</strong> ${subject}</p>
 
-        <table style="width:100%;border-collapse:collapse;">
-          <tr>
-            <td style="padding:8px 0;color:#8892a4;width:120px;">Name</td>
-            <td style="padding:8px 0;font-weight:600;">${name}</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 0;color:#8892a4;">Email</td>
-            <td style="padding:8px 0;">
-              <a href="mailto:${email}" style="color:#C6FA50;">${email}</a>
-            </td>
-          </tr>
-          ${phone
-            ? `<tr>
-                <td style="padding:8px 0;color:#8892a4;">Phone</td>
-                <td style="padding:8px 0;">${phone}</td>
-               </tr>`
-            : ""}
-          <tr>
-            <td style="padding:8px 0;color:#8892a4;">Subject</td>
-            <td style="padding:8px 0;font-weight:600;">${subject}</td>
-          </tr>
-        </table>
+      <hr>
 
-        <hr style="border-color:#1e2740;margin:20px 0;" />
-
-        <p style="color:#8892a4;margin-bottom:8px;">Message</p>
-        <p style="background:#0d1117;padding:16px;border-radius:8px;
-                  border-left:3px solid #C6FA50;line-height:1.7;">
-          ${message.replace(/\n/g, "<br/>")}
-        </p>
-
-        <p style="color:#4a5568;font-size:12px;margin-top:24px;">
-          Sent from Digi Labs Contact Form &middot; ${new Date().toLocaleString()}
-        </p>
-      </div>
+      <p>${message.replace(/\n/g, "<br>")}</p>
     `,
   });
 };
 
-/**
- * Sends a confirmation auto-reply email to the customer who filled out the contact form.
- */
-const sendUserAutoReply = async ({ name, email, subject, message }) => {
-  await transporter.sendMail({
-    from:    `"Digi Labs" <${process.env.EMAIL_USER}>`,
-    to:      email,
-    subject: "We received your message — Digi Labs",
+const sendUserAutoReply = async ({
+  name,
+  email,
+  subject,
+  message,
+}) => {
+  return transporter.sendMail({
+    from: `"Digi Labs" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "We received your message - Digi Labs",
     html: `
-      <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;
-                  background:#0a0f1e;color:#f0f4ff;padding:32px;border-radius:12px;">
+      <h2>Hello ${name} 👋</h2>
 
-        <h2 style="color:#C6FA50;">Thanks, ${name}! 👋</h2>
+      <p>Thank you for contacting Digi Labs.</p>
 
-        <p style="color:#8892a4;line-height:1.7;">
-          We've received your message and our team will get back to you within
-          <strong style="color:#fff;">2 business hours</strong>.
-        </p>
+      <p>We have received your message and will reply as soon as possible.</p>
 
-        <p style="color:#8892a4;">Here's a summary of what you sent:</p>
+      <hr>
 
-        <div style="background:#0d1117;padding:16px;border-radius:8px;
-                    border-left:3px solid #C6FA50;margin:16px 0;">
-          <p style="margin:0 0 8px 0;font-size:13px;color:#8892a4;">
-            Submitted Email: <strong style="color:#fff;">${email}</strong>
-          </p>
-          <strong>${subject}</strong><br/>
-          <span style="color:#8892a4;">
-            ${message.slice(0, 200)}${message.length > 200 ? "…" : ""}
-          </span>
-        </div>
+      <p><strong>Subject:</strong> ${subject}</p>
 
-        <p style="color:#4a5568;font-size:12px;margin-top:24px;">
-          — The Digi Labs Team &middot; digilabs.io
-        </p>
-      </div>
+      <p>${message.slice(0, 200)}</p>
+
+      <br>
+
+      <p>Regards,<br>Digi Labs Team</p>
     `,
   });
 };
 
-module.exports = { sendAdminNotification, sendUserAutoReply };
+module.exports = {
+  sendAdminNotification,
+  sendUserAutoReply,
+};
