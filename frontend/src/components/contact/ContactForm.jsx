@@ -13,15 +13,29 @@ import { sendContactForm } from "../../apis/contact";
 
 /* ─── Math CAPTCHA generator ─────────────────────────────────── */
 const generateCaptcha = () => {
-  const a   = Math.floor(Math.random() * 12) + 1;
-  const b   = Math.floor(Math.random() * 12) + 1;
   const ops = ["+", "−", "×"];
-  const op  = ops[Math.floor(Math.random() * ops.length)];
+  const op = ops[Math.floor(Math.random() * ops.length)];
+
+  let a = Math.floor(Math.random() * 12) + 1;
+  let b = Math.floor(Math.random() * 12) + 1;
   let answer;
-  if (op === "+") answer = a + b;
-  else if (op === "−") answer = a - b;
-  else answer = a * b;
-  return { question: `${a} ${op} ${b}`, answer };
+
+  if (op === "−") {
+    // Ensure first number is always greater than or equal to second
+    if (a < b) {
+      [a, b] = [b, a];
+    }
+    answer = a - b;
+  } else if (op === "+") {
+    answer = a + b;
+  } else {
+    answer = a * b;
+  }
+
+  return {
+    question: `${a} ${op} ${b}`,
+    answer,
+  };
 };
 
 /* ─── Field config ───────────────────────────────────────────── */
