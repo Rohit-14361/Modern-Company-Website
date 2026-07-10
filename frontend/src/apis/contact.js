@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "https://modern-company-website-qq8t.onrender.com";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://32.199.161.49";
 
 
 export const sendContactForm = async (payload) => {
